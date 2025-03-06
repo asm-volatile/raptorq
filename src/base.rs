@@ -89,6 +89,12 @@ impl EncodingPacket {
         return serialized;
     }
 
+    pub fn serialize_into(&self, serialized: &mut Vec<u8>) {
+        unsafe { serialized.set_len(0) };
+        serialized.extend_from_slice(&self.payload_id.serialize());
+        serialized.extend(self.data.iter());
+    }
+
     /// Retrieves packet payload ID.
     pub fn payload_id(&self) -> &PayloadId {
         &self.payload_id
