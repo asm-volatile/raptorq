@@ -94,6 +94,27 @@ impl Decoder {
         Some(result)
     }
 
+    pub fn decode_into(&mut self, packet: EncodingPacket, result: &mut Vec<u8>) -> Option<usize> {
+        unsafe { result.set_len(0) };
+        let block_number = packet.payload_id.source_block_number() as usize;
+        if self.blocks[block_number].is_none() {
+            self.blocks[block_number] =
+                self.block_decoders[block_number].decode(iter::once(packet));
+        }
+        for block in self.blocks.iter() {
+            if block.is_none() {
+                return None;
+            }
+        }
+
+        for block in self.blocks.iter().flatten() {
+            result.extend(block);
+        }
+
+        result.truncate(self.config.transfer_length() as usize);
+        Some(result.len()).filter(|x| *x > 0)
+    }
+
     #[cfg(not(feature = "python"))]
     pub fn add_new_packet(&mut self, packet: EncodingPacket) {
         let block_number = packet.payload_id.source_block_number() as usize;
